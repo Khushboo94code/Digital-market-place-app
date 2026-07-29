@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Document</title>
+</head>
+<body class="m-0">
+
+    <nav class="shadow-lg">
+        <div class="flex flex-wrap justify-between items-center px-4 py-2.5">
+            <a href="/" class="flex items-center">
+                <img class="h-9 mr-3" src="https://cdn-icons-png.flaticon.com/512/3081/3081559.png" alt="Shopping trolley">
+                <span class="self-center text-xl font-semibold">Digital Marketplace</span>
+            </a>
+            <div class="flex items-center">
+                <a href="" class="mr-6 text-sm font-medium text-grey-500"> Dashboard</a>
+                <a href="" class="mr-6 text-sm font-medium text-grey-500">Sales</a>
+                <a href="" class="mr-6 text-sm font-medium text-grey-500">Orders</a>
+                <a href="" class="mr-6 text-sm font-medium text-grey-500">Creating products</a>
+                <a href="" class="mr-6 text-sm font-medium text-grey-500">My Purchases</a>
+                <a href="" class="mr-6 text-sm font-medium text-grey-500">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <main class="px-4 py-4">
+        {% block body %}
+
+        {% endblock %}
+    </main>
+</body>
+</html>

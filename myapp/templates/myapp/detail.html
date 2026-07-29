@@ -1,0 +1,18 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+<div class="flex gap-10 p-10">
+    <div class="w-1/3 shrink-0">
+         <img class="w-full h-64 object-contain" src="https://motobros.com/wp-content/uploads/2024/09/no-image.jpeg" alt="">
+    </div>
+    <div>
+         <div class="4xl mb-4">{{ product.name }}</div>
+         <div class="mb-4">{{ product.description }}</div>
+         <div class="mb-4 text-green-700 font-bold"> ${{ product.price }}</div>
+         <div>
+          <button class="bg-green-500 text-white px-4 py-2 rounded-sm">Buy</button>
+         </div>
+    </div>
+</div>
+
+{% endblock %}

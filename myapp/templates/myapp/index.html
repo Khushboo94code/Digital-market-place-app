@@ -1,0 +1,33 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+
+This is the index page of myapp.
+<div class="flex flex-wrap items-stretch gap-10">
+{% for product in products %}
+
+    <div class="product shadow-lg w-1/4 rounded-lg flex flex-col overflow-hidden">
+        <div class="product-image">
+            <img class="w-full h-48 object-cover" src="https://motobros.com/wp-content/uploads/2024/09/no-image.jpeg" alt="">
+       </div>
+
+        <div class="p-5 flex flex-col flex-1">
+                    <div class="font-bold">
+                        {{ product.name }}
+                    </div>
+                    <div>
+                        {{ product.description }}
+                    </div>
+                    <div class="text-green-700 font-bold">
+                        ${{ product.price }}
+                    </div>
+                    <div class="mt-5">
+                        <a class="bg-green-500 text-white px-4 py-2" href="{% url 'detail' product.id%}">View Details</a>
+                    </div>
+        </div>
+
+    </div>
+
+{% endfor %}
+</div>
+{% endblock %}
