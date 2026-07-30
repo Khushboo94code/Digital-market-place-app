@@ -1,0 +1,106 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+
+<div class="mx-auto max-w-2xl py-8">
+
+    <div class="mb-6">
+        <a href="{% url 'index' %}" class="text-sm text-gray-500 hover:text-gray-800">&larr; Back to products</a>
+        <h1 class="mt-2 text-2xl font-bold text-gray-900">Edit Product</h1>
+        <p class="mt-1 text-sm text-gray-500">
+            Add a digital product to the marketplace. All fields are required.
+        </p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="rounded-lg border border-gray-200 bg-white shadow-sm">
+
+            {% if product_form.non_field_errors %}
+                <div class="m-6 mb-0 rounded-md border-l-4 border-red-400 bg-red-50 p-4 text-sm text-red-700">
+                    {% for error in product_form.non_field_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="p-6">
+                <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">Details</div>
+
+                <div class="mt-4">
+                    <label for="{{ product_form.name.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
+                        {{ product_form.name.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ product_form.name }}
+                    {% for error in product_form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-5">
+                    <label for="{{ product_form.description.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
+                        {{ product_form.description.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ product_form.description }}
+                    <p class="mt-1 text-xs text-gray-500">{{ product_form.description.help_text }}</p>
+                    {% for error in product_form.description.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 p-6">
+                <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">Pricing</div>
+
+                <div class="mt-4 w-1/2">
+                    <label for="{{ product_form.price.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
+                        {{ product_form.price.label }} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">$</span>
+                        {{ product_form.price }}
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">{{ product_form.price.help_text }}</p>
+                    {% for error in product_form.price.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 p-6">
+                <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">File</div>
+
+                <div class="mt-4">
+                    <label for="{{ product_form.File.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
+                        {{ product_form.File.label }} <span class="text-red-500">*</span>
+                    </label>
+                    <div class="rounded-md border border-dashed border-gray-300 p-4">
+                        {{ product_form.File }}
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">{{ product_form.File.help_text }}</p>
+                    {% for error in product_form.File.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+                <a href="{% url 'delete' product.id %}" class="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+                    Delete product
+                </a>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'index' %}" class="rounded-md px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900">
+                        Cancel
+                    </a>
+                    <button class="rounded-md bg-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-600" type="submit">
+                        Update product
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+<form action="POST">
+     {{ user_form.as_p }}
+     <button type="submit">Creat user</button>
+</form>
+
+
+{% endblock %}
