@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+*.log
+
+# User uploads / media
+media/
+uploads/
+
+# Secrets — never commit these
+.env
+
+# Virtualenvs
+env/
+venv/
+.venv/
+
+# macOS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
