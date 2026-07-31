@@ -57,7 +57,7 @@ class UserRegistrationForm(forms.ModelForm):
     class Meta:
         model=User
         fields=['username','email','first_name']
-    def check_password(self):
-        if self.cleaned_data['passward']!=self.cleaned_data['password2']:
+    def clean_password2(self):
+        if self.cleaned_data.get('password')!=self.cleaned_data['password2']:
             raise forms.ValidationError('Password fields donot match')
         return self.cleaned_data['password2']
