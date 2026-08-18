@@ -32,3 +32,6 @@ staticfiles/
 
 # local backups
 *.bak
+
+# Paste-ready production variables — contains live secrets, never commit
+railway.env
