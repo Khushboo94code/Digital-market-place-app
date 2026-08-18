@@ -18,6 +18,7 @@ urlpatterns = [
     path('logout/',views.logout_view,name='logout'),
     path('invalid/',views.invalid,name='invalid'),
     path('purchases/',views.mypurchases,name='purchases'),
+    path('download/<int:id>/',views.download,name='download'),
     path('sales/',views.sales,name='sales'),
     path('sell/',views.become_seller,name='become_seller'),
     path('start/',views.choose_role,name='choose_role'),

@@ -67,7 +67,7 @@
           </p>
      </div>
 
-     <button class="bg-green-500 text-white px-4 py-2" type="submit">Creat user</button>
+     <button class="bg-green-500 text-white px-4 py-2" type="submit">Create user</button>
      </form>
       <p class="text-sm text-grey-500">
           Already have an account? <a href="{% url 'login' %}" class="text-blue-500">Login here</a>
@@ -76,4 +76,20 @@
 
 
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+     // Registering logs the new account straight in, and Django rotates the CSRF
+     // token on login. A second click therefore resubmits the form with a token
+     // the server has already retired, which comes back as a bare 403 even though
+     // the first click created the account. Take the button out of play as soon as
+     // the form is on its way so there is no second click to make.
+     document.querySelector('form').addEventListener('submit', function (event) {
+          const button = event.target.querySelector('button[type="submit"]');
+          if (!button) { return; }
+          button.disabled = true;
+          button.textContent = 'Creating account\u2026';
+     });
+</script>
 {% endblock %}

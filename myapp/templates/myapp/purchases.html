@@ -55,7 +55,7 @@
 
         <div class=" w-1/4">
 
-            <a  class="bg-blue-500 text-white px-2 py-4" href="{{ order.product.File.url }}" download> Click to Download</a>
+            <a  class="bg-blue-500 text-white px-2 py-4" href="{% url 'download' order.product.id %}" download> Click to Download</a>
         </div>
 
 

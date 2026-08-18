@@ -6,7 +6,7 @@
     <div class="font-bold text-6xl">
         Payment Successful
     </div>
-    <a class="bg-green-500 font-bold text-white px-4 py-2 rounded-sm" href="{{ order.product.File.url }}" download> Click Here to Download</a>
+    <a class="bg-green-500 font-bold text-white px-4 py-2 rounded-sm" href="{% url 'download' order.product.id %}" download> Click Here to Download</a>
 </div>
 
 

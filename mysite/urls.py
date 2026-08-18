@@ -15,12 +15,18 @@ urlpatterns = [
 ]
 
 # django.conf.urls.static.static() returns an empty list whenever DEBUG is False,
-# so the previous version of this file meant every product image and every paid
-# download 404'd in production. This route serves MEDIA_ROOT in both modes.
+# so relying on it meant every product image 404'd in production. This route
+# replaces it and works in both modes.
 #
-# Django's static serve view does no caching and reads the file through the app
-# process, which is acceptable at this size. Moving uploads to object storage
-# (S3/Cloudflare R2) behind a CDN is the real fix when traffic grows.
+# The pattern deliberately matches only 'images/', the cover art, which is meant
+# to be public. Purchased files live in MEDIA_ROOT/uploads and are NOT routed
+# here: serving that prefix handed any product to anyone who had the URL, with no
+# login, order or payment involved. They are reachable only through
+# myapp.views.download, which verifies the buyer paid.
+#
+# Django's static serve view does no caching and reads through the app process,
+# which is acceptable at this size. Object storage (S3/Cloudflare R2) behind a CDN
+# is the real fix when traffic grows.
 urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': settings.MEDIA_ROOT}),
+    re_path(r'^media/(?P<path>images/.*)$', static_serve, {'document_root': settings.MEDIA_ROOT}),
 ]

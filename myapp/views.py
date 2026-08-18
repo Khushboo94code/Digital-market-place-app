@@ -1,3 +1,4 @@
+import os
 import time
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -6,7 +7,7 @@ from django.conf import settings
 from django.urls import reverse
 import stripe,json
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse,HttpResponseNotFound
+from django.http import JsonResponse,HttpResponseNotFound,FileResponse
 from .forms import ProductForm,UserRegistrationForm
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -227,6 +228,41 @@ def become_seller(request):
     return render(request,'myapp/become_seller.html')
 
 @login_required
+@login_required
+def download(request, id):
+    """Serve a purchased file, after checking the caller actually paid for it.
+
+    The download links used to point straight at /media/uploads/<name>, which
+    Django handed to anyone holding the URL — no login, no order, no payment.
+    One shared link or one search-engine crawl gave the file away for free.
+
+    MEDIA_ROOT/uploads is no longer routed over HTTP at all (see mysite/urls.py),
+    so this view is the only way to reach a product file.
+    """
+    product = get_object_or_404(Product, id=id)
+
+    # iexact for the same reason mypurchases uses it: the buyer types their email
+    # at Stripe checkout, so its case need not match the one on their account.
+    bought = orderDetail.objects.filter(
+        product=product,
+        has_paid=True,
+        customer_email__iexact=request.user.email,
+    ).exists()
+
+    # A seller can always fetch their own upload, otherwise they cannot check
+    # what their buyers actually receive.
+    if not (bought or product.seller_id == request.user.id):
+        return redirect('invalid')
+
+    # FileResponse streams the file in chunks instead of reading it into memory,
+    # and closes the handle once the response is finished.
+    return FileResponse(
+        product.File.open('rb'),
+        as_attachment=True,
+        filename=os.path.basename(product.File.name),
+    )
+
+
 def mypurchases(request):
     # Without login_required this raised AttributeError: AnonymousUser has no
     # .email. iexact rather than exact because the buyer types their email at
