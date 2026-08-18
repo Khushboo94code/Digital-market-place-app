@@ -9,6 +9,21 @@ INPUT_CLASSES = (
 )
 
 class ProductForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Both fields take a file, so it was easy to put the cover art in
+        # 'Product file' and leave 'Cover image' empty. That saved without
+        # complaint, then the storefront showed a grey "No image" box and the
+        # picture sat in the paid-downloads area where nothing serves it.
+        # Requiring it here turns that silent mistake into a visible error.
+        #
+        # Form-level only: Product.image stays blank=True, so products saved
+        # before this and anything created in the admin remain valid. An edit of
+        # a product that already has a cover does not ask for it again — Django's
+        # FileField falls back to the stored value when no new file is sent.
+        self.fields['image'].required = True
+
     class Meta:
         model=Product
         fields=['name','description','price' ,'File','image']
@@ -16,14 +31,20 @@ class ProductForm(forms.ModelForm):
             'name': 'Product name',
             'description': 'Short description',
             'price': 'Price (USD)',
-            'File': 'Product file',
-            'image': 'Cover image',
+            'File': 'Product file \u2014 what buyers download',
+            'image': 'Cover image \u2014 what buyers see',
         }
         help_texts={
             'description': 'One line that tells buyers what they are getting. Max 100 characters.',
             'price': 'Buyers are charged this amount at checkout.',
-            'File': 'The file the buyer downloads after paying.',
-            'image': 'Optional. Shown on the storefront. A square image looks best.',
+            'File': (
+                'The file the buyer receives after paying. Never shown publicly, '
+                'so it is not used as the picture on the storefront.'
+            ),
+            'image': (
+                'The picture shown on the storefront and the product page. '
+                'A square image looks best.'
+            ),
         }
         widgets={
             'name': forms.TextInput(attrs={

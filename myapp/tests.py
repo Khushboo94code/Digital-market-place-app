@@ -118,3 +118,98 @@ class MediaRoutingTests(TestCase):
         response = self.client.get('/media/images/nope.jpg')
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.resolver_match.view_name, 'django.views.static.serve')
+
+
+@override_settings(MEDIA_ROOT=MEDIA)
+class ProductFormCoverImageTests(TestCase):
+    """The cover image must be supplied, and must not be confused with the file.
+
+    Leaving it blank used to save quietly, put nothing on the storefront, and
+    leave sellers hunting for a picture that was actually sitting in the
+    paid-downloads area under the wrong field.
+    """
+
+    def setUp(self):
+        self.seller = User.objects.create_user(
+            'seller2', 'seller2@example.com', 'pw-for-tests-4'
+        )
+
+    @staticmethod
+    def _fields():
+        return {'name': 'Thing', 'description': 'A thing', 'price': '5.00'}
+
+    @staticmethod
+    def _png():
+        # Smallest valid PNG, so ImageField's Pillow check passes.
+        return SimpleUploadedFile(
+            'cover.png',
+            (
+                b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01'
+                b'\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00'
+                b'\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+            ),
+            content_type='image/png',
+        )
+
+    def test_cover_image_is_required(self):
+        from .forms import ProductForm
+
+        form = ProductForm(
+            data=self._fields(),
+            files={'File': SimpleUploadedFile('product.zip', b'payload')},
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn('image', form.errors)
+
+    def test_valid_with_both_files(self):
+        from .forms import ProductForm
+
+        form = ProductForm(
+            data=self._fields(),
+            files={
+                'File': SimpleUploadedFile('product.zip', b'payload'),
+                'image': self._png(),
+            },
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_editing_keeps_an_existing_cover_without_reupload(self):
+        from .forms import ProductForm
+
+        product = Product.objects.create(
+            seller=self.seller,
+            name='Thing',
+            description='A thing',
+            price=5.0,
+            File=SimpleUploadedFile('product.zip', b'payload'),
+            image=self._png(),
+        )
+        form = ProductForm(data=self._fields(), files={}, instance=product)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_editing_a_product_with_no_cover_demands_one(self):
+        from .forms import ProductForm
+
+        product = Product.objects.create(
+            seller=self.seller,
+            name='Thing',
+            description='A thing',
+            price=5.0,
+            File=SimpleUploadedFile('product.zip', b'payload'),
+        )
+        form = ProductForm(data=self._fields(), files={}, instance=product)
+        self.assertFalse(form.is_valid())
+        self.assertIn('image', form.errors)
+
+    def test_the_two_uploads_land_in_separate_directories(self):
+        product = Product.objects.create(
+            seller=self.seller,
+            name='Thing',
+            description='A thing',
+            price=5.0,
+            File=SimpleUploadedFile('product.zip', b'payload'),
+            image=self._png(),
+        )
+        # uploads/ is served only through the paid-download view; images/ is public.
+        self.assertTrue(product.File.name.startswith('uploads/'))
+        self.assertTrue(product.image.name.startswith('images/'))

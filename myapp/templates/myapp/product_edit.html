@@ -86,12 +86,24 @@
 
                 <div class="mt-6">
                     <label for="{{ product_form.image.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
-                        {{ product_form.image.label }}
+                        {{ product_form.image.label }} <span class="text-red-500">*</span>
                     </label>
                     <div class="rounded-md border border-dashed border-gray-300 p-4">
                         {{ product_form.image }}
                     </div>
                     <p class="mt-1 text-xs text-gray-500">{{ product_form.image.help_text }}</p>
+                    {% if product.image %}
+                    <p class="mt-2 text-xs text-gray-500">
+                        Current cover:
+                        <a class="text-blue-600 underline" href="{{ product.image.url }}" target="_blank">{{ product.image.name }}</a>
+                    </p>
+                    {% else %}
+                    <p class="mt-2 text-sm text-amber-700">
+                        No cover image yet, so the storefront shows a grey &ldquo;No image&rdquo; box.
+                        Pick one here &mdash; the product file above is a separate upload and is never
+                        shown to shoppers.
+                    </p>
+                    {% endif %}
                     {% for error in product_form.image.errors %}
                         <p class="mt-1 text-sm text-red-600">{{ error }}</p>
                     {% endfor %}
