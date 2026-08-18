@@ -1,27 +1,26 @@
 """
 URL configuration for mysite project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
+For more information please see:
     https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
-from django.conf.urls.static import static
+from django.urls import path, include, re_path
 from django.conf import settings
+from django.views.static import serve as static_serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',include('myapp.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('', include('myapp.urls')),
+]
 
-
+# django.conf.urls.static.static() returns an empty list whenever DEBUG is False,
+# so the previous version of this file meant every product image and every paid
+# download 404'd in production. This route serves MEDIA_ROOT in both modes.
+#
+# Django's static serve view does no caching and reads the file through the app
+# process, which is acceptable at this size. Moving uploads to object storage
+# (S3/Cloudflare R2) behind a CDN is the real fix when traffic grows.
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', static_serve, {'document_root': settings.MEDIA_ROOT}),
+]

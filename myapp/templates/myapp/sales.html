@@ -1,0 +1,227 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+
+<div class ="flex justify-between">
+    <div class="ml-20 mt-10 font-bold text-xl">Sales Stats</div>
+    <div >
+         <a href="{% url 'dashboard' %}" class="ml-20 mt-10 text-blue-500">Dashboard</a>
+    </div>
+</div>
+
+
+
+<div class="shadow-lg p-10 m-5">
+    <div class="font-bold text-2xl">Total Sales</div>
+    <div class="font-bold text-4xl mt-5 text-green-500">${{ total_sales.amount__sum }}</div>
+    <div class="font-bold text-2xl mt-5">Life time revenue </div>
+
+</div>
+
+
+<div class="flex">
+
+
+
+
+
+
+    <div class=" p-5 w-1/3">
+        <div class="shadow-lg p-10">
+             <div class="text-4xl font-bold"> ${{ yearly_sales.amount__sum }}</div>
+             <div> last 365 days</div>
+        </div>
+    </div>
+
+
+
+
+    <div class=" p-5 w-1/3">
+        <div class="shadow-lg p-10">
+             <div class="text-4xl font-bold"> ${{ monthly_sales.amount__sum }}</div>
+             <div> last 30 days</div>
+        </div>
+    </div>
+  
+
+
+    <div class=" p-5 w-1/3">
+        <div class="shadow-lg p-10">
+             <div class="text-4xl font-bold"> ${{ weekly_sales.amount__sum }}</div>
+             <div> last 7 days</div>
+        </div>
+    </div>
+
+
+
+</div>
+
+
+<div class="shadow-lg p-10 m-5">
+    <div class="font-bold text-2xl">Daily Sales</div>
+    <div class="text-sm text-gray-500 mt-1">Revenue per day</div>
+
+    <div class="flex mt-5">
+
+        <div class="w-1/2 pr-8">
+            <div class="flex font-bold py-2 border-b">
+                <div class="w-1/2">Date</div>
+                <div class="w-1/2">Amount</div>
+            </div>
+            {% for day in daily_sales_sum %}
+            <div class="flex py-2">
+                <div class="w-1/2">{{ day.created_on__date|date:"d M Y" }}</div>
+                <div class="w-1/2 text-green-500">${{ day.sum }}</div>
+            </div>
+            {% empty %}
+            <div class="py-2 text-gray-500">No sales yet.</div>
+            {% endfor %}
+        </div>
+
+        <div class="w-1/2 pl-8">
+            <div class="h-72">
+                <canvas id="dailySalesChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<div class="shadow-lg p-10 m-5">
+    <div class="font-bold text-2xl">Sales by Product</div>
+    <div class="text-sm text-gray-500 mt-1">Lifetime revenue per product</div>
+
+    <div class="flex mt-5">
+
+        <div class="w-1/2 pr-8">
+            <div class="flex font-bold py-2 border-b">
+                <div class="w-1/2">Product</div>
+                <div class="w-1/2">Total Amount</div>
+            </div>
+            {% for product in product_sales_sum %}
+            <div class="flex py-2">
+                <div class="w-1/2">{{ product.name }}</div>
+                <div class="w-1/2 text-green-500">${{ product.sum }}</div>
+            </div>
+            {% empty %}
+            <div class="py-2 text-gray-500">No products yet.</div>
+            {% endfor %}
+        </div>
+
+        <div class="w-1/2 pl-8">
+            <div class="h-72">
+                <canvas id="productSalesChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+{{ daily_chart|json_script:"daily-chart-data" }}
+{{ product_chart|json_script:"product-chart-data" }}
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const SERIES  = '#2a78d6';   // validated against the white card surface
+    const WASH    = 'rgba(42,120,214,0.10)';
+    const SURFACE = '#ffffff';
+    const GRID    = '#e1e0d9';
+    const MUTED   = '#898781';
+    const AXIS    = '#c3c2b7';
+
+    const daily   = JSON.parse(document.getElementById('daily-chart-data').textContent);
+    const product = JSON.parse(document.getElementById('product-chart-data').textContent);
+
+    const money = v => '$' + Number(v).toLocaleString();
+
+    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+
+    new Chart(document.getElementById('dailySalesChart'), {
+        type: 'line',
+        data: {
+            labels: daily.labels,
+            datasets: [{
+                data: daily.values,
+                borderColor: SERIES,
+                borderWidth: 2,
+                borderJoinStyle: 'round',
+                borderCapStyle: 'round',
+                fill: true,
+                backgroundColor: WASH,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: SERIES,
+                pointBorderColor: SURFACE,
+                pointBorderWidth: 2,
+                pointHitRadius: 12,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => money(c.parsed.y) } }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    border: { color: AXIS },
+                    ticks: { color: MUTED }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: GRID, drawTicks: false },
+                    border: { display: false },
+                    ticks: { color: MUTED, callback: money }
+                }
+            }
+        }
+    });
+
+    new Chart(document.getElementById('productSalesChart'), {
+        type: 'bar',
+        data: {
+            labels: product.labels,
+            datasets: [{
+                data: product.values,
+                backgroundColor: SERIES,
+                maxBarThickness: 24,
+                borderSkipped: false,
+                borderRadius: { topLeft: 0, bottomLeft: 0, topRight: 4, bottomRight: 4 },
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => money(c.parsed.x) } }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: GRID, drawTicks: false },
+                    border: { display: false },
+                    ticks: { color: MUTED, callback: money }
+                },
+                y: {
+                    grid: { display: false },
+                    border: { color: AXIS },
+                    ticks: { color: MUTED }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -16,6 +16,13 @@
           <div class="border rounded py-2 px-2 mr-10">
                {{ user_form.email }}
           </div>
+          <p class="mt-1 text-xs text-gray-500">
+               One email per account. Selling? Use a separate business email,
+               e.g. <span class="font-mono">yourname.business@gmail.com</span>
+          </p>
+          {% if user_form.email.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ user_form.email.errors.0 }}</p>
+          {% endif %}
      </div>
      <div class="mb-2">
           <label >Password</label>
@@ -30,11 +37,41 @@
           <div class="border rounded py-2 px-2 mr-10">
                {{ user_form.password2}}
           </div>
-          
+
      </div>
-     
-     <button class="bg-greeen-500 text-white px-4 py-2" type="submit">Creat user</button>
+
+     {# Rendered by hand rather than {{ user_form.role }} so each option is a #}
+     {# big, obviously-labelled box. A plain radio list made it too easy to  #}
+     {# pick "sell" without noticing.                                        #}
+     <div class="mb-4 mt-6">
+          <label class="font-medium">What brings you here?</label>
+
+          <label class="mt-2 flex cursor-pointer items-start gap-3 rounded-md border-2 border-gray-200 p-3 hover:border-green-400 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+               <input type="radio" name="role" value="buyer" class="mt-1" checked>
+               <span>
+                    <span class="block text-sm font-semibold">I want to buy</span>
+                    <span class="block text-xs text-gray-500">Browse and download products. Most people start here.</span>
+               </span>
+          </label>
+
+          <label class="mt-2 flex cursor-pointer items-start gap-3 rounded-md border-2 border-gray-200 p-3 hover:border-amber-400 has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50">
+               <input type="radio" name="role" value="seller" class="mt-1">
+               <span>
+                    <span class="block text-sm font-semibold">I want to sell</span>
+                    <span class="block text-xs text-gray-500">List your own products. You can still buy as normal.</span>
+               </span>
+          </label>
+
+          <p class="mt-2 text-xs text-gray-500">
+               Either way you can start selling later from the Sell link.
+          </p>
+     </div>
+
+     <button class="bg-green-500 text-white px-4 py-2" type="submit">Creat user</button>
      </form>
+      <p class="text-sm text-grey-500">
+          Already have an account? <a href="{% url 'login' %}" class="text-blue-500">Login here</a>
+     </p>
 </div>
 
 

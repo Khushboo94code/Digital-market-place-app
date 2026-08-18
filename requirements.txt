@@ -1,0 +1,17 @@
+Django==6.0.7
+python-dotenv==1.2.2
+stripe==15.3.1
+pillow==12.3.0
+requests==2.34.2
+
+# Production WSGI server (dev uses manage.py runserver instead).
+gunicorn==26.0.0
+
+# Serves collected static files from the app process, so no nginx/CDN needed.
+whitenoise==6.11.0
+
+# Parses Railway's DATABASE_URL into Django's DATABASES dict.
+dj-database-url==3.0.1
+
+# Postgres driver, used when DATABASE_URL points at Railway's Postgres addon.
+psycopg[binary]==3.2.10

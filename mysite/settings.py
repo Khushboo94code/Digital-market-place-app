@@ -29,9 +29,50 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Off unless DJANGO_DEBUG is explicitly truthy, so a deploy that forgets to set
+# anything is safe rather than exposing tracebacks.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').strip().lower() in ('1', 'true', 'yes', 'on')
 
-ALLOWED_HOSTS = []
+# Railway injects RAILWAY_PUBLIC_DOMAIN with the service's public hostname. Any
+# custom domain goes in DJANGO_ALLOWED_HOSTS as a comma-separated list.
+ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
+
+_railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+if _railway_domain and _railway_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_railway_domain)
+
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
+
+# Django checks the Origin header on unsafe requests. Behind Railway's TLS proxy
+# the origin is https, so without this every POST (login, checkout) fails CSRF.
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{h}' for h in ALLOWED_HOSTS
+    if h not in ('127.0.0.1', 'localhost', 'testserver')
+]
+
+# Railway terminates TLS and forwards plain HTTP to the container, so Django has
+# to read this header to know the original request was secure.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Secure cookies require HTTPS, which local development does not have.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+# Railway serves every deployment over HTTPS, so send plain HTTP requests to the
+# TLS version. Django detects the original scheme via SECURE_PROXY_SSL_HEADER
+# above, so this does not cause a redirect loop behind the proxy.
+SECURE_SSL_REDIRECT = os.environ.get(
+    'SECURE_SSL_REDIRECT', str(not DEBUG)
+).strip().lower() in ('1', 'true', 'yes', 'on')
+
+# HSTS tells browsers to refuse plain HTTP for this host for the given period.
+# Left at 0 deliberately: the value is cached by the browser and cannot be undone
+# early, which is painful on a throwaway *.up.railway.app hostname. Set
+# SECURE_HSTS_SECONDS=31536000 once the site is on a custom domain you intend to
+# keep. Until then `check --deploy` reporting security.W004 is expected.
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
 
 
 # Application definition
@@ -48,12 +89,17 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Serves collected static files directly from the app process, so no separate
+    # web server or CDN is needed. Must sit immediately after SecurityMiddleware.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Keeps the browser from re-showing a page rendered for a different user.
+    'myapp.middleware.NoStoreHtmlMiddleware',
 ]
 
 ROOT_URLCONF = 'mysite.urls'
@@ -62,12 +108,29 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [],
-        'APP_DIRS': True,
+        # APP_DIRS cannot be set when 'loaders' is given below; the
+        # app_directories loader in that list does the same job.
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # puts {{ is_seller }} in every template, so base.html can decide
+                # whether to draw the seller links
+                'myapp.context_processors.roles',
+            ],
+            # Django enables the cached loader by default and only clears it via
+            # runserver's autoreloader. Under gunicorn nothing clears it, so
+            # template edits are invisible until the workers restart. Read from
+            # disk every request while developing; keep the cache in production.
+            'loaders': [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ] if DEBUG else [
+                ('django.template.loaders.cached.Loader', [
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+                ]),
             ],
         },
     },
@@ -82,9 +145,36 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # SQLITE_PATH lets the file live on a mounted volume; a container's
+        # own filesystem is wiped on every deploy.
+        'NAME': Path(os.environ.get('SQLITE_PATH', BASE_DIR / 'db.sqlite3')),
+        # Needed once more than one worker/thread serves requests. SQLite allows
+        # many readers but only one writer, so without these a second concurrent
+        # write fails outright with "database is locked".
+        'OPTIONS': {
+            # WAL lets readers keep working while a write is in progress.
+            'init_command': 'PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;',
+            # Take the write lock at BEGIN instead of upgrading mid-transaction,
+            # which is the case SQLite cannot retry safely.
+            'transaction_mode': 'IMMEDIATE',
+            # Wait for a busy writer rather than erroring immediately.
+            'timeout': 20,
+        },
     }
 }
+
+# Railway's Postgres addon injects DATABASE_URL. When it is present it replaces
+# the SQLite config wholesale -- the OPTIONS above (WAL, transaction_mode) are
+# SQLite-only and Postgres would reject them.
+_database_url = os.environ.get('DATABASE_URL')
+if _database_url:
+    import dj_database_url
+
+    DATABASES['default'] = dj_database_url.parse(
+        _database_url,
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 
 # Password validation
@@ -125,5 +215,25 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# collectstatic writes here at build time; WhiteNoise serves from it.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+
+# Uploaded product files and cover images. On Railway this MUST point at a
+# mounted volume (MEDIA_ROOT=/app/media), otherwise every redeploy destroys
+# every seller's uploads and buyers' download links 404.
+MEDIA_ROOT = Path(os.environ.get('MEDIA_ROOT', BASE_DIR / 'media'))
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        # Hashes filenames for cache-busting and pre-compresses them.
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'index'

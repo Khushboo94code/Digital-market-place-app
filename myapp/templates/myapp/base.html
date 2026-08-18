@@ -4,30 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>Document</title>
+    <title>{% block title %}Digital Marketplace{% endblock %}</title>
 </head>
-<body class="m-0">
+<body class="m-0 bg-gray-50">
 
-    <nav class="shadow-lg">
-        <div class="flex flex-wrap justify-between items-center px-4 py-2.5">
-            <a href="/" class="flex items-center">
-                <img class="h-9 mr-3" src="https://cdn-icons-png.flaticon.com/512/3081/3081559.png" alt="Shopping trolley">
-                <span class="self-center text-xl font-semibold">Digital Marketplace</span>
+    {% with active=request.resolver_match.url_name %}
+    <nav class="sticky top-0 z-50 bg-slate-900 shadow-lg">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+
+            <a href="{% url 'index' %}" class="flex items-center gap-2.5 group">
+                <svg class="h-9 w-9 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M3.5 7h17l-1.3 12.3a2.2 2.2 0 0 1-2.2 2H7a2.2 2.2 0 0 1-2.2-2L3.5 7Z" fill="#fbbf24"/>
+                    <path d="M8.5 7.5V5.75a3.5 3.5 0 1 1 7 0V7.5" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M12 10.8v5.4m0 0 2.2-2.2M12 16.2 9.8 14" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="self-center text-xl font-bold tracking-tight text-white">
+                    Digital<span class="text-amber-400">Market</span>
+                </span>
             </a>
-            <div class="flex items-center">
-                <a href="" class="mr-6 text-sm font-medium text-grey-500"> Dashboard</a>
-                <a href="" class="mr-6 text-sm font-medium text-grey-500">Sales</a>
-                <a href="" class="mr-6 text-sm font-medium text-grey-500">Orders</a>
-                <a href="" class="mr-6 text-sm font-medium text-grey-500">Creating products</a>
-                <a href="" class="mr-6 text-sm font-medium text-grey-500">My Purchases</a>
-                <a href="" class="mr-6 text-sm font-medium text-grey-500">Logout</a>
+
+            <div class="flex flex-wrap items-center gap-1">
+
+                {# The shop is for everyone, sellers included — a seller buys other #}
+                {# people's products too. Outside every conditional on purpose.     #}
+                <a href="{% url 'index' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium transition {% if active == 'index' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    Shop
+                </a>
+
+                {# SELLER LINKS — their own if-block, not an {% else %}. A seller #}
+                {# is also a buyer, so they pass this block AND the one below.    #}
+                {% if is_seller %}
+                <a href="{% url 'dashboard' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium transition {% if active == 'dashboard' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    Dashboard
+                </a>
+                <a href="{% url 'sales' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium transition {% if active == 'sales' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    Sales
+                </a>
+                <span class="cursor-not-allowed rounded-md px-3 py-2 text-sm font-medium text-slate-500" title="Coming soon">
+                    Orders
+                </span>
+                <a href="{% url 'createproduct' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium transition {% if active == 'createproduct' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    New Product
+                </a>
+                <span class="mx-2 hidden h-5 w-px bg-slate-700 sm:block"></span>
+                {% endif %}
+
+                {# BUYER LINKS — everyone who is logged in, sellers included. #}
+                {% if user.is_authenticated %}
+                <a href="{% url 'purchases' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium transition {% if active == 'purchases' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    My Purchases
+                </a>
+
+                {% if not is_seller %}
+                <a href="{% url 'become_seller' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium text-amber-400 transition hover:bg-slate-800">
+                    Sell
+                </a>
+                {% endif %}
+
+                <span class="mx-2 hidden h-5 w-px bg-slate-700 sm:block"></span>
+
+                <span class="text-sm font-medium text-white">{{ user.username }}</span>
+                <form method="POST" action="{% url 'logout' %}" class="inline">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="rounded-md px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">
+                        Logout
+                    </button>
+                </form>
+
+                {% else %}
+                {# Anonymous visitors see Sell too — /sell/ sends them to login first. #}
+                <a href="{% url 'become_seller' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium text-amber-400 transition hover:bg-slate-800">
+                    Sell
+                </a>
+                <a href="{% url 'login' %}"
+                   class="rounded-md px-3 py-2 text-sm font-medium transition {% if active == 'login' %}bg-slate-700 text-white{% else %}text-slate-300 hover:bg-slate-800 hover:text-white{% endif %}">
+                    Login
+                </a>
+                <a href="{% url 'register' %}"
+                   class="rounded-md bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-300">
+                    Register
+                </a>
+                {% endif %}
+
             </div>
         </div>
     </nav>
+    {% endwith %}
+
     <main class="px-4 py-4">
         {% block body %}
 
         {% endblock %}
     </main>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>

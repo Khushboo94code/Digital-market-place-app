@@ -1,0 +1,99 @@
+{% extends 'myapp/base.html' %}
+
+{% block body %}
+
+{# This is a buyer page. It had a "New Product" button copied from the seller #}
+{# dashboard, which every buyer could see and click. Removed.                 #}
+<div class ="flex justify-between">
+    <div class="ml-20 mt-10 font-bold text-xl">My Purchases</div>
+</div>
+<div class="order-container shadow-lg p-10 m-5">
+    <div class="order-header  flex  font-bold  m-5 p-2">
+         <div class=" w-1/4">
+
+            Product Name
+
+        </div>
+        <div class=" w-1/4">
+
+            Amount Paid
+
+        
+
+        </div>
+
+        <div class=" w-1/4">
+
+            Date of Purchase
+
+        </div>
+
+        <div class=" w-1/4">
+
+            Download Link
+
+        </div>
+    </div>
+    {% for order in orders %}
+    <div class="flex   m-5 p-2 ">
+        <div class=" w-1/4">
+
+         {{ order.product.name }}
+
+        </div>
+        <div class=" w-1/4  text-green-500" >
+
+        ${{ order.amount }}
+
+        </div>
+
+        <div class=" w-1/4">
+
+        {{ order.created_on }}
+
+        </div>
+
+        <div class=" w-1/4">
+
+            <a  class="bg-blue-500 text-white px-2 py-4" href="{{ order.product.File.url }}" download> Click to Download</a>
+        </div>
+
+
+
+                
+       
+
+
+        
+        
+        
+        
+        
+        
+        
+
+        
+       
+
+       
+    </div>
+     
+
+     
+    {% empty %}
+    <div class="m-5 rounded-lg border border-dashed border-gray-300 p-12 text-center">
+        <div class="mb-2 text-lg font-semibold text-gray-700">No purchases yet</div>
+        <p class="mb-6 text-sm text-gray-500">
+            Anything you buy will appear here with its download link.
+        </p>
+        <a class="rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600"
+           href="{% url 'index' %}">
+            Browse products
+        </a>
+    </div>
+    {% endfor %}
+
+
+</div>
+
+{% endblock %}

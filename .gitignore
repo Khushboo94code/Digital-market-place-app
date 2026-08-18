@@ -26,3 +26,9 @@ venv/
 # Editors
 .vscode/
 .idea/
+
+# collectstatic output (regenerated on every build)
+staticfiles/
+
+# local backups
+*.bak

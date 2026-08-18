@@ -11,17 +11,19 @@ INPUT_CLASSES = (
 class ProductForm(forms.ModelForm):
     class Meta:
         model=Product
-        fields=['name','description','price' ,'File']
+        fields=['name','description','price' ,'File','image']
         labels={
             'name': 'Product name',
             'description': 'Short description',
             'price': 'Price (USD)',
             'File': 'Product file',
+            'image': 'Cover image',
         }
         help_texts={
             'description': 'One line that tells buyers what they are getting. Max 100 characters.',
             'price': 'Buyers are charged this amount at checkout.',
             'File': 'The file the buyer downloads after paying.',
+            'image': 'Optional. Shown on the storefront. A square image looks best.',
         }
         widgets={
             'name': forms.TextInput(attrs={
@@ -47,17 +49,75 @@ class ProductForm(forms.ModelForm):
                     'file:font-medium file:text-green-700 hover:file:bg-green-100'
                 ),
             }),
+            'image': forms.ClearableFileInput(attrs={
+                'accept': 'image/*',
+                'class': (
+                    'block w-full cursor-pointer text-sm text-gray-600 '
+                    'file:mr-4 file:cursor-pointer file:rounded-md file:border-0 '
+                    'file:bg-green-50 file:px-4 file:py-2 file:text-sm '
+                    'file:font-medium file:text-green-700 hover:file:bg-green-100'
+                ),
+            }),
         }
 
 
 
 class UserRegistrationForm(forms.ModelForm):
-    password=forms.CharField(label='Password',widget=forms.PasswordInput)
-    password2=forms.CharField(label='Confirm Password',widget=forms.PasswordInput)
+    password=forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={'placeholder':'At least 8 characters'}),
+    )
+    password2=forms.CharField(
+        label='Confirm Password',
+        widget=forms.PasswordInput(attrs={'placeholder':'Type the same password again'}),
+    )
+
+    # Declared here to override the model, where email is blank=True and would
+    # therefore be optional. One email must identify one account, so it has to
+    # be filled in. The placeholder spells out the format, since a seller cannot
+    # reuse the email already on their buyer account.
+    email=forms.EmailField(
+        label='Email',
+        required=True,
+        # Kept short: a long placeholder is clipped by the input's width, which
+        # hides the end of it. The seller note lives under the field instead.
+        widget=forms.EmailInput(attrs={'placeholder':'you@example.com'}),
+    )
+
+    # A ChoiceField only ever validates to one of these two values, so the
+    # browser can say which button was picked without being able to name a
+    # group. The view decides what 'seller' means.
+    ROLE_CHOICES=[
+        ('buyer','I want to buy'),
+        ('seller','I want to sell'),
+    ]
+    role=forms.ChoiceField(
+        label='What brings you here?',
+        choices=ROLE_CHOICES,
+        initial='buyer',
+        widget=forms.RadioSelect,
+    )
+
     class Meta:
         model=User
         fields=['username','email','first_name']
+        widgets={
+            'username':forms.TextInput(attrs={'placeholder':'e.g. muskan_store'}),
+            'first_name':forms.TextInput(attrs={'placeholder':'e.g. Muskan'}),
+        }
     def clean_password2(self):
         if self.cleaned_data.get('password')!=self.cleaned_data['password2']:
             raise forms.ValidationError('Password fields donot match')
         return self.cleaned_data['password2']
+
+    def clean_email(self):
+        # One email, one account — so a buyer and a seller account need separate
+        # addresses. Compared case-insensitively because 'A@x.com' and 'a@x.com'
+        # are the same mailbox, and purchases are matched by email.
+        email=self.cleaned_data['email'].strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                'An account already uses this email. Use a different email for '
+                'your seller account.'
+            )
+        return email

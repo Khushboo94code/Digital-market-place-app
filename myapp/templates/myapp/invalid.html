@@ -1,0 +1,63 @@
+{% extends 'myapp/base.html' %}
+
+{% block title %}Seller account needed{% endblock %}
+
+{% block body %}
+<div class="mx-auto max-w-lg px-4 py-20 text-center">
+
+    <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+        <svg class="h-7 w-7 text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 1a4 4 0 0 0-4 4v3H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1V5a4 4 0 0 0-4-4Zm2 7V5a2 2 0 1 0-4 0v3h4Z" clip-rule="evenodd"/>
+        </svg>
+    </div>
+
+    {% if not user.is_authenticated %}
+        {# Not signed in at all. #}
+        <h1 class="mb-2 text-2xl font-bold text-slate-900">Please log in</h1>
+        <p class="mb-8 text-slate-600">You need an account to open this page.</p>
+        <a href="{% url 'login' %}"
+           class="inline-block rounded-md bg-green-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-600">
+            Log in
+        </a>
+
+    {% elif not is_seller %}
+        {# Signed in as a buyer — offer the upgrade instead of a dead end. #}
+        <h1 class="mb-2 text-2xl font-bold text-slate-900">Seller account required</h1>
+        <p class="mb-8 text-slate-600">
+            You&rsquo;re signed in as <span class="font-semibold">{{ user.username }}</span>, which is a
+            buyer account. That page is part of the seller area.
+        </p>
+
+        <div class="flex flex-col items-center gap-3">
+            <a href="{% url 'register' %}"
+               class="inline-block rounded-md bg-green-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-600">
+                Create a seller account
+            </a>
+
+            {# Already have one? Sign out of this account first. Logout is a POST. #}
+            <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="text-sm text-slate-600 underline hover:text-slate-900">
+                    Log in with a seller account
+                </button>
+            </form>
+
+            <a href="{% url 'index' %}" class="mt-2 text-sm text-slate-500 hover:text-slate-700">
+                Back to the shop
+            </a>
+        </div>
+
+    {% else %}
+        {# A seller who tried to touch a product that isn't theirs. #}
+        <h1 class="mb-2 text-2xl font-bold text-slate-900">Not your product</h1>
+        <p class="mb-8 text-slate-600">
+            You can only edit or delete products you listed yourself.
+        </p>
+        <a href="{% url 'dashboard' %}"
+           class="inline-block rounded-md bg-green-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-600">
+            Back to my products
+        </a>
+    {% endif %}
+
+</div>
+{% endblock %}

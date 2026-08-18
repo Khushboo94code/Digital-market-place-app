@@ -69,7 +69,7 @@
             </div>
 
             <div class="border-t border-gray-200 p-6">
-                <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">File</div>
+                <div class="text-xs font-semibold uppercase tracking-wide text-gray-400">Files</div>
 
                 <div class="mt-4">
                     <label for="{{ product_form.File.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
@@ -80,6 +80,19 @@
                     </div>
                     <p class="mt-1 text-xs text-gray-500">{{ product_form.File.help_text }}</p>
                     {% for error in product_form.File.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+
+                <div class="mt-6">
+                    <label for="{{ product_form.image.id_for_label }}" class="mb-1 block text-sm font-medium text-gray-700">
+                        {{ product_form.image.label }}
+                    </label>
+                    <div class="rounded-md border border-dashed border-gray-300 p-4">
+                        {{ product_form.image }}
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500">{{ product_form.image.help_text }}</p>
+                    {% for error in product_form.image.errors %}
                         <p class="mt-1 text-sm text-red-600">{{ error }}</p>
                     {% endfor %}
                 </div>

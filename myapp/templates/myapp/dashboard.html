@@ -13,7 +13,13 @@
     <div class="flex  shadow-lg m-5 p-2 justify-between">
         <div class="flex w-1/4">
 
-            <img  class="h-20" src="https://motobros.com/wp-content/uploads/2024/09/no-image.jpeg" alt="">
+            {% if product.image %}
+            <img  class="h-20 w-20 object-contain" src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+            <div class="flex h-20 w-20 items-center justify-center rounded bg-gray-100">
+                <span class="text-xs text-gray-400">No image</span>
+            </div>
+            {% endif %}
         <div class="relative group">
             <a href="{% url 'editproduct' product.id %}">
             <div class="opacity-0 group-hover:opacity-100 duration-300 absolute inset-x-0 bottom-0 p-4 justify-center items-end bg-white font-semibold">
@@ -37,11 +43,11 @@
         
 
         <div>
-            <div class="text-2xl"> $200</div>
+            <div class="text-2xl">${{ product.total_sales_amount|floatformat:2 }}</div>
              <div class="text-xs">Total earnings</div>
         </div>
          <div>
-            <div class="text-2xl"> 20</div>
+            <div class="text-2xl">{{ product.total_sales }}</div>
              <div class="text-xs">Total orders</div>
         </div>
          <div class="pr-5">
@@ -53,6 +59,17 @@
      
 
      
+    {% empty %}
+    <div class="m-5 rounded-lg border border-dashed border-gray-300 p-12 text-center">
+        <div class="mb-2 text-lg font-semibold text-gray-700">No products yet</div>
+        <p class="mb-6 text-sm text-gray-500">
+            Add your first product and it will show up here with its earnings and orders.
+        </p>
+        <a class="rounded-md bg-green-500 px-4 py-2 text-sm font-semibold text-white hover:bg-green-600"
+           href="{% url 'createproduct' %}">
+            Add your first product
+        </a>
+    </div>
     {% endfor %}
 
 
